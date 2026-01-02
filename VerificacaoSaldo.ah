@@ -1,4 +1,33 @@
+// VerificacaoSaldo.ah
 #include <iostream>
-#include "main.cpp"
+#include "main.cpp" // Necessário para conhecer a classe Conta
 
-aspect 
+aspect VerificacaoSaldo {
+public:
+    // 1. O POINTCUT (O Alvo)
+    pointcut chamadasDeSaque() = execution("void %::sacar(double)");
+
+    // 2. O ADVICE (A Ação)
+    advice chamadasDeSaque() : around() {
+        
+        // 3. O JOIN POINT (O Contexto)
+        // Recupera o objeto que está sofrendo a ação (o "this" do objeto original)
+        Conta *contaAlvo = (Conta*)tjp->that(); 
+        
+        // Recupera o valor do argumento passado para a função sacar(double valor)
+        double valorSolicitado = *tjp->arg(); 
+
+        std::cout << "[ASPECTO] Interceptando saque..." << std::endl;
+
+        // Lógica de Validação
+        if (contaAlvo->getSaldo() >= valorSolicitado) {
+            // SINAL VERDE: Executa o método original (sacar)
+            tjp->proceed(); 
+        } else {
+            // SINAL VERMELHO: Não chama proceed(), o saque é cancelado silenciosamente
+            // e apenas o log de erro é gerado.
+            std::cerr << "[ERRO] Saldo Insuficiente! Titular: " 
+                      << contaAlvo->getTitular() << std::endl;
+        }
+    }
+};
